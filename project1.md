@@ -250,10 +250,7 @@ class values_everage:
         for i in emg.values():
             if i == True:
                 emg_count += 1
-                # emgv_temp.append(temp_values[count - 1])
-                # emgv_humi.append(humi_values[count - 1])
-                # emgv_cds.append(cds_values[count - 1])
-                # emgv_psd.append(psd_values[count - 1])
+
                 return True
 
         return False
