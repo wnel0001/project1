@@ -24,14 +24,14 @@ pb = PiezoBuzzer()
 check_time = ""
 check_emgtime = []
  
-- 긴급벨
+- 긴급벨 
 @blynk.VIRTUAL_WRITE(8)  
 def sw8(n):
     if n[0]=='1' or n[0]=='0':
         pb.setTempo(120)
         pb.tone(4, 10, 4)
 
-- 현재까지의 기록을 입력
+- 기록 버튼
 @blynk.VIRTUAL_WRITE(7)
 def sw7(n):
     if n[0]=='1' or n[0]=='0':
@@ -40,7 +40,7 @@ def sw7(n):
             f.write("Temp = {}, Humi = {}, Cds = {}, Psd = {}, Time = {}\n".format(zpop.temp_values[i],zpop.humi_values[i],zpop.cds_values[i],zpop.psd_values[i],zpop.time_values[i]))
         f.close()
 
-- 기록의 시작
+- start 버튼
 @blynk.VIRTUAL_WRITE(5)
 def sw5(n):
     if n[0]=='1' or n[0]=='0':
@@ -59,7 +59,7 @@ def sw5(n):
                     #check_emgtime.append(zpop.time_values[zpop.count - 1]) 
                     blynk.virtual_write(4, "add", zpop.emg_count, zpop.time_values[zpop.count - 1], ''.join(zpop.strange_v))
                     check_time = ''.join(zpop.strange_v)
-- 이상치 테이블을 초기화하는 
+- 테이블 초기화 버튼 
 @blynk.VIRTUAL_WRITE(6)
 def sw6(n):
     
@@ -68,7 +68,7 @@ def sw6(n):
 
 if __name__ == "__main__":
 
-    - zpop에서 재정의한 함수를 쓰기 위함
+    
     zsw = zpop.zSWitches()      
     zds = zpop.zCds()
     zps = zpop.zPsd()
@@ -95,9 +95,9 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 from pop import Oled, Switches, Psd, Cds, Sht20
 
--실시간으로 값을 측정한 횟수
+
 count = 0  
-- 이상치를 측정한 횟수
+
 emg_count = 0
 
 emg = {}
@@ -123,6 +123,8 @@ toth = 0
 totc = 0
 totp = 0
 
+- 데코레이터 사용
+- 실시간 데이터를 전역변수에 저장
 def caller(func):
     def wrapper(*args, **kwargs):
 
@@ -157,6 +159,7 @@ class zSWitches(Switches):
 
     @caller
     def read_Switch0(self):
+        - 소숫점 2째자리 까지
         return not Switches()[0].read()
 
     @caller
@@ -202,14 +205,10 @@ class values_everage:
         global emg
         global emg_count
         global strange_v
-        # global emgv_temp
-        # global emgv_humi
-        # global emgv_psd
-        # global emgv_cds
-        # global emgv_time
-        
+
         emg = {}
         strange_v = []
+
 
         if v_everage['temp_values'] < float(temp_values[count - 1]) - 15:
             emg['temp_values_high'] = True
