@@ -1,24 +1,19 @@
 방범 및 화재 경보기
--개발 동기
-현재까지의 센서들은 잦은 고장으로 화재시 경보를 알려 줄수 없어서
-많은 재난 사고로 이어졌던이 문제를 해결하기 위해 다른 센서들과의
-데이터의 차이로 특정 센서 고장시에도 경보 기능 수행이 가능하기 때문에
-골든 타임을 확보 할 수 있습니다.
+
 -기능
+
 * 센서로 조도와 거리를 측정해서 실내 방범 용으로 사용 가능
 * cds, psd 센서를 화재 경보 기능
 * 각 센서들의 데이터를 실시간으로 모니터링 가능
-* 다른 종류의 센서들의 데이터들을 모아 평균값을 분석해서
-오차를 발견 한 후 다른 특정 센서가 만일의 고장이 있더라도
-사용이 가능
-* 고장 알림 기능
-
+* 평균값에서 많이 벗어나는 값들을 측정해서 시간과 함께 기록
+* 측정한 데이터들을 저장하는 기능
 
 ![KakaoTalk_20210430_132826745](https://user-images.githubusercontent.com/81665548/116649082-95129900-a9b9-11eb-81bc-9015363a4b72.jpg)
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 ```
-import time, zpop
+
+import time, zpop 
 from pop import PiezoBuzzer
 from datetime import datetime
 import paho.mqtt.client as mqtt
@@ -28,13 +23,15 @@ blynk = BlynkLib.Blynk('LVJ4lNh64WzmrrbkTP3UTstk_upaqwdh', server="127.0.0.1", p
 pb = PiezoBuzzer()
 check_time = ""
 check_emgtime = []
-
-@blynk.VIRTUAL_WRITE(8)
+ 
+- 긴급벨
+@blynk.VIRTUAL_WRITE(8)  
 def sw8(n):
     if n[0]=='1' or n[0]=='0':
         pb.setTempo(120)
         pb.tone(4, 10, 4)
 
+- 현재까지의 기록을 입력
 @blynk.VIRTUAL_WRITE(7)
 def sw7(n):
     if n[0]=='1' or n[0]=='0':
@@ -42,31 +39,27 @@ def sw7(n):
         for i in range(len(zpop.time_values)-2):
             f.write("Temp = {}, Humi = {}, Cds = {}, Psd = {}, Time = {}\n".format(zpop.temp_values[i],zpop.humi_values[i],zpop.cds_values[i],zpop.psd_values[i],zpop.time_values[i]))
         f.close()
-        # d = open("/home/soda/Documents/emg{}.txt".format(zpop.time_values[zpop.count-1]), "w")
-        # for i in range(zpop.emg_count):
-        #     d.write("Temp = {}, Humi = {}, Cds = {}, Psd = {}, Time = {}\n".format(zpop.emgv_temp[i],zpop.emgv_humi[i],zpop.emgv_cds[i],zpop.emgv_psd[i],check_emgtime[i]))
-        # d.close()
-    
-        
 
+- 기록의 시작
 @blynk.VIRTUAL_WRITE(5)
 def sw5(n):
     if n[0]=='1' or n[0]=='0':
+        
         @blynk.VIRTUAL_READ(0)
-
-        def temp_v():
+        def start():
             global check_time
             blynk.virtual_write(0, zpop.temp_values[zpop.count - 1])
             blynk.virtual_write(1, zpop.humi_values[zpop.count - 1])
             blynk.virtual_write(2, zpop.cds_values[zpop.count - 1])
             blynk.virtual_write(3, zpop.psd_values[zpop.count - 1])
-
+            
+            - 평균값과 큰 차이가 날때 기록하는 작업
             if zpop.count > 5 and eve.emergency():
                 if check_time == "" or check_time != ''.join(zpop.strange_v):
                     #check_emgtime.append(zpop.time_values[zpop.count - 1]) 
                     blynk.virtual_write(4, "add", zpop.emg_count, zpop.time_values[zpop.count - 1], ''.join(zpop.strange_v))
                     check_time = ''.join(zpop.strange_v)
-
+- 이상치 테이블을 초기화하는 
 @blynk.VIRTUAL_WRITE(6)
 def sw6(n):
     
@@ -75,7 +68,7 @@ def sw6(n):
 
 if __name__ == "__main__":
 
-
+    - zpop에서 재정의한 함수를 쓰기 위함
     zsw = zpop.zSWitches()      
     zds = zpop.zCds()
     zps = zpop.zPsd()
@@ -97,14 +90,18 @@ if __name__ == "__main__":
 ```
 
 ```
-import time
+
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from pop import Oled, Switches, Psd, Cds, Sht20
 
-count = 0
+-실시간으로 값을 측정한 횟수
+count = 0  
+- 이상치를 측정한 횟수
 emg_count = 0
+
 emg = {}
+
 
 cds_values = []
 psd_values = []
